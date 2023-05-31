@@ -46,14 +46,12 @@ class Board:
     def is_pos_valid(self, r: int, c: int):
         return (0 <= r < 10) and (0 <= c < 10)
 
+    def get_hint(self, r: int, c: int):
+        return self.hints[r, c] if self.is_pos_valid(r, c) else None
+
     def get_value(self, r: int, c: int):
         """Devolve o valor na respetiva posição do tabuleiro."""
-        if not self.is_pos_valid(r, c):
-            return None
-        
-        value = self.grid[r, c]
-
-        return None if (value is None) else value.lower()
+        return self.grid[r, c] if self.is_pos_valid(r, c) else None
 
     def set_value(self, r: int, c: int, value: str):
         if not self.is_pos_valid(r, c):
@@ -66,6 +64,24 @@ class Board:
                 self.h -= 1
 
         self.grid[r, c] = value
+
+    def fill_row(self, r: int):
+        for c in range(10):
+            if (self.grid[r, c] is None):
+                self.set_value(r, c, 'w')
+
+    def fill_column(self, c: int):
+        for r in range(10):
+            if (self.grid[r, c] is None):
+                self.set_value(r, c, 'w')
+    
+    def fill_zeros(self):
+        for i in range(10):
+            if (self.row_values[i] == 0):
+                self.fill_row(i)
+            
+            if (self.col_values[i] == 0):
+                self.fill_column(i)
 
     def adjacent_vertical_values(self, r: int, c: int) -> tuple:
         """Devolve os valores imediatamente acima e abaixo,
@@ -86,14 +102,14 @@ class Board:
         return left, right
     
     def fits_cboat(self, r: int, c: int):
-        return (self.row_values[r] > 0) and (self.col_values[c] > 0) and (self.grid[r, c] is None)
+        return (self.grid[r, c] is None)
     
     def fits_vboat(self, r: int, c: int, size: int):
         if (self.col_values[c] < size) or (r + size > 10):
             return False
 
         for x in range(r, r+size):
-            if (self.row_values[x] < 1) or (self.grid[x, c] is not None):
+            if (self.grid[x, c] is not None):
                 return False
         
         return True
@@ -103,7 +119,7 @@ class Board:
             return False
 
         for x in range(c, c+size):
-            if (self.col_values[x] < 1) or (self.grid[r, x] is not None):
+            if (self.grid[r, x] is not None):
                 return False
             
         return True
@@ -187,24 +203,6 @@ class Board:
         self.set_value(r - 1, c + 1, 'w')
         self.set_value(r + 1, c + 1, 'w')
         self.decrement_values(r, c)
-    
-    def fill_zeros(self):
-        for x in range(10):
-            if self.row_values[x] == 0:
-                self.fill_row(x)
-            
-            if self.col_values[x] == 0:
-                self.fill_column(x)
-
-    def fill_row(self, r: int):
-        for c in range(10):
-            if self.grid[r, c] is None:
-                self.set_value(r, c, 'w')
-
-    def fill_column(self, c: int):
-        for r in range(10):
-            if self.grid[r, c] is None:
-                self.set_value(r, c, 'w')
 
     def decrement_values(self, r: int, c: int):
         if not self.is_pos_valid(r, c):
@@ -213,10 +211,10 @@ class Board:
         self.row_values[r] -= 1
         self.col_values[c] -= 1
 
-        if self.row_values[r] == 0:
+        if (self.row_values[r] == 0):
             self.fill_row(r)
 
-        if self.col_values[c] == 0:
+        if (self.col_values[c] == 0):
             self.fill_column(c)
     
     def add_hint(self, r: int, c: int, value: str):
@@ -225,7 +223,7 @@ class Board:
 
         self.hints[r, c] = value
 
-        if value == 'W':
+        if (value == 'W'):
             self.set_value(r, c, 'w')
             return
 
@@ -234,10 +232,10 @@ class Board:
         self.set_value(r + 1, c - 1, 'w')
         self.set_value(r + 1, c + 1, 'w')
 
-        if value == 'M':
+        if (value == 'M'):
             return
 
-        if value == 'C':
+        if (value == 'C'):
             # .  .  . (row - 1)
             # .  c  . (row)
             # .  .  . (row + 1)
@@ -248,34 +246,35 @@ class Board:
             self.set_value(r, c + 1, 'w')
             self.decrement_values(r, c)
             self.boats[0] -= 1
-        elif value == 'R':
+        elif (value == 'R'):
             # . . . (row - 1)
             # ? r . (row)
             # . . . (row + 1)
             self.set_value(r - 1, c, 'w')
             self.set_value(r + 1, c, 'w')
             self.set_value(r, c + 1, 'w')
-        elif value == 'L':
+        elif (value == 'L'):
             # . . . (row - 1)
             # . l ? (row)
             # . . . (row + 1)
             self.set_value(r - 1, c, 'w')
             self.set_value(r + 1, c, 'w')
             self.set_value(r, c - 1, 'w')
-        elif value == 'T':
+        elif (value == 'T'):
             # . . . (row - 1)
             # . t . (row)
             # . ? . (row + 1)
             self.set_value(r - 1, c, 'w')
             self.set_value(r, c - 1, 'w')
             self.set_value(r, c + 1, 'w')
-        elif value == 'B':
+        elif (value == 'B'):
             # . ? . (row - 1)
             # . b . (row)
             # . . . (row + 1)
             self.set_value(r + 1, c, 'w')
             self.set_value(r, c - 1, 'w')
             self.set_value(r, c + 1, 'w')
+
 
     def print(self):
         line = ''
@@ -284,12 +283,12 @@ class Board:
             for c in range(10):
                 value = self.hints[r, c]
 
-                if value is None:
+                if (value is None):
                     value = self.grid[r, c]
 
-                    if value == 'w':
+                    if (value == 'w'):
                         value = '.'
-                    elif value is None:
+                    elif (value is None):
                         value = '?'
 
                 line += value

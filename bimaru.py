@@ -19,6 +19,8 @@ from search import (
     recursive_best_first_search,
 )
 
+iterator10 = range(10)
+
 def create_grid(size: int):
     return np.full((size, size), None)
 
@@ -26,7 +28,7 @@ def create_grid(size: int):
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
-    def __init__(self, row_values, col_values, h, hints = create_grid(10), grid = create_grid(10), boats = np.arange(1, 5)[::-1]):
+    def __init__(self, row_values, col_values, h, hints = create_grid(10), grid = create_grid(10), boats = np.arange(1, 5)):
         self.row_values = row_values
         self.col_values = col_values
         self.hints = hints
@@ -66,17 +68,17 @@ class Board:
         self.grid[r, c] = value
 
     def fill_row(self, r: int):
-        for c in range(10):
+        for c in iterator10:
             if (self.grid[r, c] is None):
                 self.set_value(r, c, 'w')
 
     def fill_column(self, c: int):
-        for r in range(10):
+        for r in iterator10:
             if (self.grid[r, c] is None):
                 self.set_value(r, c, 'w')
     
     def fill_zeros(self):
-        for i in range(10):
+        for i in iterator10:
             if (self.row_values[i] == 0):
                 self.fill_row(i)
             
@@ -125,7 +127,7 @@ class Board:
         return True
     
     def insert_cboat(self, r: int, c: int):
-        self.boats[0] -= 1
+        self.boats[-1] -= 1
         self.set_value(r, c, 'c')
         self.set_value(r - 1, c, 'w')
         self.set_value(r + 1, c, 'w')
@@ -138,7 +140,7 @@ class Board:
         self.decrement_values(r, c)
     
     def insert_vboat(self, r: int, c: int, size: int):
-        self.boats[size - 1] -= 1
+        self.boats[-size] -= 1
         self.set_value(r, c, 't')
         self.set_value(r - 1, c, 'w')
         self.set_value(r, c - 1, 'w')
@@ -172,7 +174,7 @@ class Board:
 
     
     def insert_hboat(self, r: int, c: int, size: int):
-        self.boats[size - 1] -= 1
+        self.boats[-size] -= 1
         self.set_value(r, c, 'l')
         self.set_value(r, c - 1, 'w')
         self.set_value(r - 1, c, 'w')
@@ -245,7 +247,7 @@ class Board:
             self.set_value(r, c - 1, 'w')
             self.set_value(r, c + 1, 'w')
             self.decrement_values(r, c)
-            self.boats[0] -= 1
+            self.boats[-1] -= 1
         elif (value == 'R'):
             # . . . (row - 1)
             # ? r . (row)
@@ -279,8 +281,8 @@ class Board:
     def print(self):
         line = ''
 
-        for r in range(10):
-            for c in range(10):
+        for r in iterator10:
+            for c in iterator10:
                 value = self.hints[r, c]
 
                 if (value is None):
@@ -288,7 +290,7 @@ class Board:
 
                     if (value == 'w'):
                         value = '.'
-                    elif (value is None):
+                    if (value is None):
                         value = '?'
 
                 line += value
@@ -348,24 +350,28 @@ class Bimaru(Problem):
         partir do estado passado como argumento."""
         possible_actions = []
 
-        for i in range(3, -1, -1):
-            if state.board.boats[i] > 0:
-                size = i + 1
+        size = 4
+
+        for remaining in state.board.boats:
+            if remaining > 0:
                 break
+            size -= 1
         else:
             return possible_actions
             
         if size == 1:
-            for r, c in np.ndindex((10, 10)):
-                if state.board.fits_cboat(r, c):
-                    possible_actions.append((r, c, size))
+            for r in iterator10:
+                for c in iterator10:
+                    if state.board.fits_cboat(r, c):
+                        possible_actions.append((r, c, size))
         else:
-            for x, y in np.ndindex((10, 11 - size)):
-                if state.board.fits_hboat(x, y, size):
-                    possible_actions.append((x, y, size, 'h'))
+            for x in iterator10:
+                for y in range(11 - size):
+                    if state.board.fits_hboat(x, y, size):
+                        possible_actions.append((x, y, size, 'h'))
 
-                if state.board.fits_vboat(y, x, size):
-                    possible_actions.append((y, x, size, 'v'))
+                    if state.board.fits_vboat(y, x, size):
+                        possible_actions.append((y, x, size, 'v'))
 
         return possible_actions
 
@@ -391,19 +397,19 @@ class Bimaru(Problem):
         estão preenchidas de acordo com as regras do problema."""
         board = state.board
 
-        for row in range(10):
-            for col in range(10):
-                value = board.grid[row, col]
+        for r in iterator10:
+            for c in iterator10:
+                value = board.grid[r, c]
 
                 if (value is None):
                     return False
 
-                hint = board.hints[row, col]
+                hint = board.hints[r, c]
 
                 if (hint is not None) and (value != hint.lower()):
                     return False
                 
-        if sum(board.row_values) + sum(board.col_values) + sum(board.boats):
+        if sum(board.row_values) + sum(board.boats):
             return False
 
         return True

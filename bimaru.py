@@ -20,61 +20,58 @@ from search import (
 )
 
 iterator10 = range(10)
+iterator4 = range(4)
 
-def create_grid(size: int):
-    return np.full((size, size), None)
+def create_grid():
+    return [[None for _ in iterator10] for _ in iterator10]
+
+def copy_grid(grid):
+    return [grid[r].copy() for r in iterator10]
 
 
 class Board:
     """Representação interna de um tabuleiro de Bimaru."""
 
-    def __init__(self, row_values, col_values, h, hints = create_grid(10), grid = create_grid(10), boats = np.arange(1, 5)):
+    def __init__(self, row_values, col_values, hints = create_grid(), grid = create_grid(), boats = [1, 2, 3, 4]):
         self.row_values = row_values
         self.col_values = col_values
         self.hints = hints
         self.grid = grid
         self.boats = boats
-        self.h = h + 100
 
     def clone(self):
         row_values = self.row_values.copy()
         col_values = self.col_values.copy()
-        hints = self.hints.copy()
-        grid = self.grid.copy()
+        hints = copy_grid(self.hints)
+        grid = copy_grid(self.grid)
         boats = self.boats.copy()
 
-        return Board(row_values, col_values, self.h - 100, hints, grid, boats)
+        return Board(row_values, col_values, hints, grid, boats)
 
     def is_pos_valid(self, r: int, c: int):
         return (0 <= r < 10) and (0 <= c < 10)
 
     def get_hint(self, r: int, c: int):
-        return self.hints[r, c] if self.is_pos_valid(r, c) else None
+        return self.hints[r][c] if self.is_pos_valid(r, c) else None
 
     def get_value(self, r: int, c: int):
         """Devolve o valor na respetiva posição do tabuleiro."""
-        return self.grid[r, c] if self.is_pos_valid(r, c) else None
+        return self.grid[r][c] if self.is_pos_valid(r, c) else None
 
     def set_value(self, r: int, c: int, value: str):
         if not self.is_pos_valid(r, c):
             return
-        
-        if self.grid[r, c] is None:
-            self.h -= 1
-            
-            if self.hints[r, c] == value.upper():
-                self.h -= 1
 
-        self.grid[r, c] = value
+        self.grid[r][c] = value
 
     def fill_row(self, r: int):
         for c in iterator10:
-            if (self.grid[r, c] is None):
+            if (self.grid[r][c] is None):
                 self.set_value(r, c, 'w')
 
     def fill_column(self, c: int):
         for r in iterator10:
-            if (self.grid[r, c] is None):
+            if (self.grid[r][c] is None):
                 self.set_value(r, c, 'w')
     
     def fill_zeros(self):
@@ -89,8 +86,8 @@ class Board:
         """Devolve os valores imediatamente acima e abaixo,
         respectivamente."""
 
-        above = None if (r == 0) else self.grid[r - 1, c]
-        below = None if (r == 9) else self.grid[r + 1, c]
+        above = None if (r == 0) else self.grid[r - 1][c]
+        below = None if (r == 9) else self.grid[r + 1][c]
 
         return above, below
 
@@ -98,20 +95,20 @@ class Board:
         """Devolve os valores imediatamente à esquerda e à direita,
         respectivamente."""
 
-        left = None if (c == 0) else self.grid[r, c - 1]
-        right = None if (c == 9) else self.grid[r, c + 1]
+        left = None if (c == 0) else self.grid[r][c - 1]
+        right = None if (c == 9) else self.grid[r][c + 1]
 
         return left, right
     
     def fits_cboat(self, r: int, c: int):
-        return (self.grid[r, c] is None)
+        return (self.grid[r][c] is None)
     
     def fits_vboat(self, r: int, c: int, size: int):
         if (self.col_values[c] < size) or (r + size > 10):
             return False
 
         for x in range(r, r+size):
-            if (self.grid[x, c] is not None):
+            if (self.grid[x][c] is not None):
                 return False
         
         return True
@@ -121,10 +118,28 @@ class Board:
             return False
 
         for x in range(c, c+size):
-            if (self.grid[r, x] is not None):
+            if (self.grid[r][x] is not None):
                 return False
             
         return True
+    
+    def decrement_col_value(self, c: int, amnt: int):
+        if (c < 0) or (c > 9):
+            return
+        
+        self.col_values[c] -= amnt
+
+        if (self.col_values[c] == 0):
+            self.fill_column(c)
+    
+    def decrement_row_value(self, r: int, amnt: int):
+        if (r < 0) or (r > 9):
+            return
+        
+        self.row_values[r] -= amnt
+
+        if (self.row_values[r] == 0):
+            self.fill_row(r)
     
     def insert_cboat(self, r: int, c: int):
         self.boats[-1] -= 1
@@ -137,31 +152,33 @@ class Board:
         self.set_value(r - 1, c + 1, 'w')
         self.set_value(r + 1, c - 1, 'w')
         self.set_value(r + 1, c + 1, 'w')
-        self.decrement_values(r, c)
+        self.decrement_row_value(r, 1)
+        self.decrement_col_value(c, 1)
     
     def insert_vboat(self, r: int, c: int, size: int):
         self.boats[-size] -= 1
+        self.decrement_col_value(c, size)
         self.set_value(r, c, 't')
         self.set_value(r - 1, c, 'w')
         self.set_value(r, c - 1, 'w')
         self.set_value(r, c + 1, 'w')
         self.set_value(r - 1, c - 1, 'w')
         self.set_value(r - 1, c + 1, 'w')
-        self.decrement_values(r, c)
+        self.decrement_row_value(r, 1)
 
         if size > 3:
             r += 1
             self.set_value(r, c, 'm')
             self.set_value(r, c - 1, 'w')
             self.set_value(r, c + 1, 'w')
-            self.decrement_values(r, c)
+            self.decrement_row_value(r, 1)
 
         if size > 2:
             r += 1
             self.set_value(r, c, 'm')
             self.set_value(r, c - 1, 'w')
             self.set_value(r, c + 1, 'w')
-            self.decrement_values(r, c)
+            self.decrement_row_value(r, 1)
 
         r += 1
         self.set_value(r, c, 'b')
@@ -170,32 +187,33 @@ class Board:
         self.set_value(r + 1, c, 'w')
         self.set_value(r + 1, c - 1, 'w')
         self.set_value(r + 1, c + 1, 'w')
-        self.decrement_values(r, c)
+        self.decrement_row_value(r, 1)
 
     
     def insert_hboat(self, r: int, c: int, size: int):
         self.boats[-size] -= 1
+        self.decrement_row_value(r, size)
         self.set_value(r, c, 'l')
         self.set_value(r, c - 1, 'w')
         self.set_value(r - 1, c, 'w')
         self.set_value(r + 1, c, 'w')
         self.set_value(r - 1, c - 1, 'w')
         self.set_value(r + 1, c - 1, 'w')
-        self.decrement_values(r, c)
+        self.decrement_col_value(c, 1)
 
         if size > 3:
             c += 1
             self.set_value(r, c, 'm')
             self.set_value(r - 1, c, 'w')
             self.set_value(r + 1, c, 'w')
-            self.decrement_values(r, c)
+            self.decrement_col_value(c, 1)
 
         if size > 2:
             c += 1
             self.set_value(r, c, 'm')
             self.set_value(r - 1, c, 'w')
             self.set_value(r + 1, c, 'w')
-            self.decrement_values(r, c)
+            self.decrement_col_value(c, 1)
 
         c += 1
         self.set_value(r, c, 'r')
@@ -204,26 +222,13 @@ class Board:
         self.set_value(r + 1, c, 'w')
         self.set_value(r - 1, c + 1, 'w')
         self.set_value(r + 1, c + 1, 'w')
-        self.decrement_values(r, c)
-
-    def decrement_values(self, r: int, c: int):
-        if not self.is_pos_valid(r, c):
-            return
-
-        self.row_values[r] -= 1
-        self.col_values[c] -= 1
-
-        if (self.row_values[r] == 0):
-            self.fill_row(r)
-
-        if (self.col_values[c] == 0):
-            self.fill_column(c)
+        self.decrement_col_value(c, 1)
     
     def add_hint(self, r: int, c: int, value: str):
         if not self.is_pos_valid(r, c):
             return
 
-        self.hints[r, c] = value
+        self.hints[r][c] = value
 
         if (value == 'W'):
             self.set_value(r, c, 'w')
@@ -246,7 +251,8 @@ class Board:
             self.set_value(r + 1, c, 'w')
             self.set_value(r, c - 1, 'w')
             self.set_value(r, c + 1, 'w')
-            self.decrement_values(r, c)
+            self.decrement_col_value(c, 1)
+            self.decrement_row_value(r, 1)
             self.boats[-1] -= 1
         elif (value == 'R'):
             # . . . (row - 1)
@@ -283,10 +289,10 @@ class Board:
 
         for r in iterator10:
             for c in iterator10:
-                value = self.hints[r, c]
+                value = self.hints[r][c]
 
                 if (value is None):
-                    value = self.grid[r, c]
+                    value = self.grid[r][c]
 
                     if (value == 'w'):
                         value = '.'
@@ -296,9 +302,6 @@ class Board:
                 line += value
             
             line += '\n'
-        
-        #for col in range(10):
-        #   line += str(self.col_values[col]) + ' '
 
         print(line[:-1])
 
@@ -313,12 +316,11 @@ class Board:
             > from sys import stdin
             > line = stdin.readline().split()
         """
-        row_values = np.array([int(i) for i in stdin.readline().split()[1:]])
-        col_values = np.array([int(i) for i in stdin.readline().split()[1:]])
-        nhints = int(stdin.readline())
-        board = Board(row_values, col_values, nhints)
+        row_values = [int(i) for i in stdin.readline().split()[1:]]
+        col_values = [int(i) for i in stdin.readline().split()[1:]]
+        board = Board(row_values, col_values)
 
-        for _ in range(nhints):
+        for _ in range(int(stdin.readline())):
             line = stdin.readline().split()[1:]  # Ignores 'HINT\t'
 
             board.add_hint(int(line[0]), int(line[1]), line[2])
@@ -352,26 +354,28 @@ class Bimaru(Problem):
 
         size = 4
 
-        for remaining in state.board.boats:
-            if remaining > 0:
+        for i in iterator4:
+            if state.board.boats[i] > 0:
+                size -= i
                 break
-            size -= 1
         else:
             return possible_actions
             
-        if size == 1:
+        if (size == 1):
             for r in iterator10:
                 for c in iterator10:
                     if state.board.fits_cboat(r, c):
                         possible_actions.append((r, c, size))
-        else:
-            for x in iterator10:
-                for y in range(11 - size):
-                    if state.board.fits_hboat(x, y, size):
-                        possible_actions.append((x, y, size, 'h'))
 
-                    if state.board.fits_vboat(y, x, size):
-                        possible_actions.append((y, x, size, 'v'))
+            return possible_actions
+        
+        for i in iterator10:
+            for j in range(11 - size):
+                if state.board.fits_hboat(i, j, size):
+                    possible_actions.append((i, j, size, 'H'))
+
+                if state.board.fits_vboat(j, i, size):
+                    possible_actions.append((j, i, size, 'V'))
 
         return possible_actions
 
@@ -384,9 +388,9 @@ class Bimaru(Problem):
 
         if action[2] == 1:
             board.insert_cboat(action[0], action[1])
-        elif action[3] == 'h':
+        elif action[3] == 'H':
             board.insert_hboat(action[0], action[1], action[2])
-        elif action[3] == 'v':
+        else:
             board.insert_vboat(action[0], action[1], action[2])
 
         return BimaruState(board)
@@ -399,12 +403,12 @@ class Bimaru(Problem):
 
         for r in iterator10:
             for c in iterator10:
-                value = board.grid[r, c]
+                value = board.grid[r][c]
 
                 if (value is None):
                     return False
 
-                hint = board.hints[r, c]
+                hint = board.hints[r][c]
 
                 if (hint is not None) and (value != hint.lower()):
                     return False
@@ -416,7 +420,7 @@ class Bimaru(Problem):
 
     def h(self, node: Node):
         """Função heuristica utilizada para a procura A*."""
-        return node.state.board.h
+        return 1
 
     # TODO: outros metodos da classe
 

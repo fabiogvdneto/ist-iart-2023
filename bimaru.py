@@ -19,14 +19,14 @@ from search import (
     recursive_best_first_search,
 )
 
-iterator10 = range(10)
-iterator4 = range(4)
+iter10 = range(10)
+iter4 = range(4)
 
 def create_grid():
-    return [[None for _ in iterator10] for _ in iterator10]
+    return [[None for _ in iter10] for _ in iter10]
 
 def copy_grid(grid):
-    return [grid[r].copy() for r in iterator10]
+    return [grid[r].copy() for r in iter10]
 
 
 class Board:
@@ -65,17 +65,17 @@ class Board:
         self.grid[r][c] = value
 
     def fill_row(self, r: int):
-        for c in iterator10:
+        for c in iter10:
             if (self.grid[r][c] is None):
                 self.set_value(r, c, 'w')
 
     def fill_column(self, c: int):
-        for r in iterator10:
+        for r in iter10:
             if (self.grid[r][c] is None):
                 self.set_value(r, c, 'w')
     
     def fill_zeros(self):
-        for i in iterator10:
+        for i in iter10:
             if (self.row_values[i] == 0):
                 self.fill_row(i)
             
@@ -254,13 +254,6 @@ class Board:
             self.decrement_col_value(c, 1)
             self.decrement_row_value(r, 1)
             self.boats[-1] -= 1
-        elif (value == 'R'):
-            # . . . (row - 1)
-            # ? r . (row)
-            # . . . (row + 1)
-            self.set_value(r - 1, c, 'w')
-            self.set_value(r + 1, c, 'w')
-            self.set_value(r, c + 1, 'w')
         elif (value == 'L'):
             # . . . (row - 1)
             # . l ? (row)
@@ -268,6 +261,13 @@ class Board:
             self.set_value(r - 1, c, 'w')
             self.set_value(r + 1, c, 'w')
             self.set_value(r, c - 1, 'w')
+        elif (value == 'R'):
+            # . . . (row - 1)
+            # ? r . (row)
+            # . . . (row + 1)
+            self.set_value(r - 1, c, 'w')
+            self.set_value(r + 1, c, 'w')
+            self.set_value(r, c + 1, 'w')
         elif (value == 'T'):
             # . . . (row - 1)
             # . t . (row)
@@ -287,8 +287,8 @@ class Board:
     def print(self):
         line = ''
 
-        for r in iterator10:
-            for c in iterator10:
+        for r in iter10:
+            for c in iter10:
                 value = self.hints[r][c]
 
                 if (value is None):
@@ -354,7 +354,7 @@ class Bimaru(Problem):
 
         size = 4
 
-        for i in iterator4:
+        for i in iter4:
             if state.board.boats[i] > 0:
                 size -= i
                 break
@@ -362,14 +362,14 @@ class Bimaru(Problem):
             return possible_actions
             
         if (size == 1):
-            for r in iterator10:
-                for c in iterator10:
+            for r in iter10:
+                for c in iter10:
                     if state.board.fits_cboat(r, c):
                         possible_actions.append((r, c, size))
 
             return possible_actions
         
-        for i in iterator10:
+        for i in iter10:
             for j in range(11 - size):
                 if state.board.fits_hboat(i, j, size):
                     possible_actions.append((i, j, size, 'H'))
@@ -401,8 +401,8 @@ class Bimaru(Problem):
         estão preenchidas de acordo com as regras do problema."""
         board = state.board
 
-        for r in iterator10:
-            for c in iterator10:
+        for r in iter10:
+            for c in iter10:
                 value = board.grid[r][c]
 
                 if (value is None):

@@ -2,10 +2,10 @@
 
 Projeto realizado pelos alunos Guilherme Henriques (ist1103403) e Fábio Neto (ist1104126) no âmbito
 da cadeira de Inteligência Artificial 2022/23 do curso de Engenharia Informática e
-de Computadores do Instituto Superior Técnico dirigida pela professora Inês Lynce.  
+de Computadores do Instituto Superior Técnico dirigida pela professora Inês Lynce.
 Este projeto tem como objetivo desenvolver um programa em Python que resolva o
-problema Bimaru utilizando técnicas de IA.  
-O enunciado encontra-se na diretoria raiz, acessível a todos para possível consulta.
+problema Bimaru utilizando técnicas de IA. O enunciado encontra-se na diretoria raiz,
+acessível a todos para possível consulta.
 
 ## Scripts
 

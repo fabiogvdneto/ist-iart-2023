@@ -1,6 +1,6 @@
 # Projeto Bimaru
 
-Projeto realizado pelos alunos Guilherme Henriques (103) e Fábio Neto (104126) no âmbito
+Projeto realizado pelos alunos Guilherme Henriques (ist1103403) e Fábio Neto (ist1104126) no âmbito
 da cadeira de Inteligência Artificial 2022/23 do curso de Engenharia Informática e
 de Computadores do Instituto Superior Técnico dirigida pela professora Inês Lynce.  
 Este projeto tem como objetivo desenvolver um programa em Python que resolva o
